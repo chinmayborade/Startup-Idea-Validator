@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Validate — Startup Idea Validator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #09090b;
+      --surface: #111113;
+      --border: #1e1e22;
+      --border-bright: #2e2e36;
+      --text: #e8e8ee;
+      --muted: #6b6b7a;
+      --accent: #f0e060;
+      --accent-dim: RGBA(240,224,96,0.12);
+      --green: #4ade80;
+      --red: #f87171;
+      --orange: #fb923c;
+      --blue: #60a5fa;
+      --purple: #a78bfa;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 10;
+    }
+
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+    }
+    .logo span { color: var(--accent); }
+
+    .status-pill {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      border: 1px solid var(--border-bright);
+      padding: 4px 12px;
+      border-radius: 100px;
+      letter-spacing: 0.08em;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 48px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero {
+      margin-bottom: 64px;
+      max-width: 640px;
+    }
+
+    .hero-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hero-tag::before {
+      content: '';
+      width: 24px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+    h1 em { font-style: italic; color: var(--accent); }
+
+    .hero-sub {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.65;
+      max-width: 480px;
+    }
+
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px;
+      margin-bottom: 48px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 8px; }
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    input, textarea {
+      background: var(--bg);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 300;
+      padding: 12px 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      width: 100%;
+      resize: none;
+    }
+    input::placeholder, textarea::placeholder { color: #3a3a44; }
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    textarea { min-height: 88px; line-height: 1.6; }
+
+    .btn-validate {
+      margin-top: 28px;
+      width: 100%;
+      background: var(--accent);
+      color: #09090b;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 16px 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: opacity 0.2s, transform 0.15s;
+      letter-spacing: 0.01em;
+    }
+    .btn-validate:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-validate:active { transform: translateY(0); }
+    .btn-validate:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid RGBA(9,9,11,0.3);
+      border-top-color: #09090b;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading-state {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 48px 40px;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .loading-steps {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .step-pill {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      padding: 6px 14px;
+      border-radius: 100px;
+      border: 1px solid var(--border-bright);
+      color: var(--muted);
+      transition: all 0.4s;
+    }
+    .step-pill.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+      box-shadow: 0 0 12px var(--accent-dim);
+    }
+    .step-pill.done {
+      border-color: var(--green);
+      color: var(--green);
+      background: RGBA(74,222,128,0.08);
+    }
+
+    #results { display: none; }
+
+    .verdict-banner {
+      border-radius: 12px;
+      padding: 32px 40px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .verdict-banner.go   { background: RGBA(74,222,128,0.08); border: 1px solid RGBA(74,222,128,0.25); }
+    .verdict-banner.pivot{ background: RGBA(251,146,60,0.08);  border: 1px solid RGBA(251,146,60,0.25); }
+    .verdict-banner.kill { background: RGBA(248,113,113,0.08); border: 1px solid RGBA(248,113,113,0.25); }
+
+    .verdict-left { flex: 1; }
+    .verdict-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .go   .verdict-tag { color: var(--green); }
+    .pivot.verdict-tag  { color: var(--orange); }
+    .kill .verdict-tag  { color: var(--red); }
+
+    .verdict-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      line-height: 1.3;
+    }
+
+    .verdict-score-ring {
+      position: relative;
+      width: 96px; height: 96px;
+      flex-shrink: 0;
+    }
+    .verdict-score-ring svg { transform: rotate(-90deg); }
+    .ring-bg  { fill: none; stroke: var(--border-bright); stroke-width: 6; }
+    .ring-fill{ fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1); }
+    .go   .ring-fill { stroke: var(--green); }
+    .pivot .ring-fill { stroke: var(--orange); }
+    .kill .ring-fill { stroke: var(--red); }
+    .ring-label {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .ring-number {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+    .ring-sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .score-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+    .score-card-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .score-card-value {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.8rem;
+    }
+    .score-bar {
+      height: 2px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .sections-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .section-icon {
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+    }
+    .section-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .kv-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+    }
+    .kv-row:last-child { border-bottom: none; }
+    .kv-key { font-size: 0.8rem; color: var(--muted); flex-shrink: 0; }
+    .kv-val  { font-size: 0.85rem; text-align: right; font-weight: 400; }
+
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      padding: 4px 10px;
+      border-radius: 100px;
+      border: 1px solid var(--border-bright);
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    .risk-item {
+      display: flex;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    .risk-item:last-child { border-bottom: none; }
+    .risk-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      margin-top: 7px;
+      flex-shrink: 0;
+      background: var(--red);
+    }
+    .risk-dot.mitigation { background: var(--blue); }
+
+    .next-steps-card {
+      background: var(--accent-dim);
+      border: 1px solid RGBA(240,224,96,0.2);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .next-steps-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .next-step-row {
+      display: flex;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid RGBA(240,224,96,0.12);
+      align-items: flex-start;
+    }
+    .next-step-row:last-child { border-bottom: none; }
+    .step-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.2rem;
+      color: var(--accent);
+      line-height: 1;
+      flex-shrink: 0;
+      width: 20px;
+    }
+    .step-text { font-size: 0.88rem; line-height: 1.6; }
+
+    .assumption-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--purple);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+    .assumption-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--purple);
+      margin-bottom: 8px;
+    }
+    .assumption-text { font-size: 0.9rem; line-height: 1.6; }
+
+    .pitch-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 32px;
+    }
+    .pitch-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .pitch-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--border-bright);
+      color: var(--muted);
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-reset:hover { border-color: var(--text); color: var(--text); }
+
+    .error-box {
+      background: RGBA(248,113,113,0.08);
+      border: 1px solid RGBA(248,113,113,0.25);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      color: var(--red);
+      font-size: 0.85rem;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .mono-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin: 14px 0 6px;
+    }
+
+    @media (max-width: 768px) {
+      header { padding: 16px 24px; }
+      .container { padding: 40px 24px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .score-grid { grid-template-columns: repeat(3, 1fr); }
+      .sections-grid { grid-template-columns: 1fr; }
+      .verdict-banner { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">validate<span>.</span></div>
+  <div class="status-pill">langchain + groq</div>
+</header>
+
+<main class="container">
+  <div class="hero">
+    <div class="hero-tag">AI-Powered Analysis</div>
+    <h1>Does your idea<br><em>actually</em> have legs?</h1>
+    <p class="hero-sub">Run your startup concept through parallel AI analyses — market sizing, competition, feasibility, revenue, risk, and trend timing — synthesized into one honest verdict.</p>
+  </div>
+
+  <!-- Form -->
+  <div class="form-card" id="form-card">
+    <div class="form-grid">
+      <div class="field full">
+        <label for="idea">Your Startup Idea</label>
+        <input type="text" id="idea" placeholder="e.g. AI-powered meal planning app that reduces food waste" />
+      </div>
+      <div class="field">
+        <label for="problem">Problem Being Solved</label>
+        <textarea id="problem" placeholder="What painful problem does this solve? Who feels this pain?"></textarea>
+      </div>
+      <div class="field">
+        <label for="solution">Your Solution</label>
+        <textarea id="solution" placeholder="How does your product/service solve the problem?"></textarea>
+      </div>
+      <div class="field">
+        <label for="target_customer">Target Customer</label>
+        <textarea id="target_customer" placeholder="Be specific: age, demographics, behavior, context"></textarea>
+      </div>
+      <div class="field">
+        <label for="uvp">Unique Value Proposition</label>
+        <textarea id="uvp" placeholder="Why will customers choose you over alternatives?"></textarea>
+      </div>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+
+    <button class="btn-validate" id="validate-btn" onclick="runValidation()">
+      <div class="spinner" id="btn-spinner"></div>
+      <span id="btn-text">Validate My Idea →</span>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div id="loading-state">
+    <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:8px">RUNNING ANALYSIS</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;margin-bottom:4px">Crunching your idea...</div>
+    <div style="color:var(--muted);font-size:0.85rem">Running parallel AI chains + agents. This takes ~30 seconds.</div>
+    <div class="loading-steps">
+      <div class="step-pill" id="step-market">Market Analysis</div>
+      <div class="step-pill" id="step-competition">Competition</div>
+      <div class="step-pill" id="step-feasibility">Feasibility</div>
+      <div class="step-pill" id="step-revenue">Revenue</div>
+      <div class="step-pill" id="step-risk">Risk Assessment</div>
+      <div class="step-pill" id="step-trends">Trend Timing</div>
+      <div class="step-pill" id="step-summary">Synthesis</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results"></div>
+</main>
+
+<script>
+const STEPS = ['market','competition','feasibility','revenue','risk','trends'];
+let stepTimer;
+
+function animateSteps() {
+  let i = 0;
+  STEPS.forEach(s => document.getElementById('step-' + s)?.classList.remove('active','done'));
+  document.getElementById('step-summary')?.classList.remove('active','done');
+
+  stepTimer = setInterval(() => {
+    if (i < STEPS.length) {
+      const el = document.getElementById('step-' + STEPS[i]);
+      if (i > 0) {
+        const prev = document.getElementById('step-' + STEPS[i-1]);
+        prev?.classList.remove('active');
+        prev?.classList.add('done');
+      }
+      el?.classList.add('active');
+      i++;
+    } else {
+      clearInterval(stepTimer);
+      STEPS.forEach(s => {
+        document.getElementById('step-' + s)?.classList.remove('active');
+        document.getElementById('step-' + s)?.classList.add('done');
+      });
+      document.getElementById('step-summary')?.classList.add('active');
+    }
+  }, 2500);
+}
+
+function stopStepAnimation() {
+  clearInterval(stepTimer);
+  [...STEPS, 'summary'].forEach(s => {
+    const el = document.getElementById('step-' + s);
+    el?.classList.remove('active');
+    el?.classList.add('done');
+  });
+}
+
+async function runValidation() {
+  const fields = ['idea','problem','solution','target_customer','uvp'];
+  const data = {};
+  for (const f of fields) {
+    data[f] = document.getElementById(f)?.value.trim();
+    if (!data[f]) {
+      showError('Please fill in all fields before validating.');
+      return;
+    }
+  }
+
+  hideError();
+  setLoading(true);
+
+  try {
+    const res = await fetch('/api/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    const result = await res.json();
+    console.log('API RESPONSE:', JSON.stringify(result, null, 2)); // DEBUG
+    console.log('summary:', result.summary);         // DEBUG
+    console.log('market:', result.market);           // DEBUG
+    console.log('competitors:', result.competitors); // DEBUG
+
+    if (!res.ok) throw new Error(result.detail || 'Validation failed');
+
+    stopStepAnimation();
+    await new Promise(r => setTimeout(r, 600));
+
+    console.log('Calling renderResults...'); // DEBUG
+    renderResults(result);
+    console.log('renderResults done');       // DEBUG
+
+  } catch (err) {
+    console.error('ERROR:', err);            // DEBUG
+    setLoading(false);
+    showError(err.message);
+  }
+}
+
+function setLoading(on) {
+  const formCard = document.getElementById('form-card');
+  const loading  = document.getElementById('loading-state');
+  const btn      = document.getElementById('validate-btn');
+  const spinner  = document.getElementById('btn-spinner');
+  const btnText  = document.getElementById('btn-text');
+
+  if (on) {
+    formCard.style.display = 'none';
+    loading.style.display  = 'block';
+    btn.disabled           = true;
+    spinner.style.display  = 'block';
+    btnText.textContent    = 'Analyzing...';
+    animateSteps();
+  } else {
+    formCard.style.display = 'block';
+    loading.style.display  = 'none';
+    btn.disabled           = false;
+    spinner.style.display  = 'none';
+    btnText.textContent    = 'Validate My Idea →';
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-box');
+  el.textContent    = '⚠ ' + msg;
+  el.style.display  = 'block';
+}
+function hideError() {
+  document.getElementById('error-box').style.display = 'none';
+}
+
+function scoreColor(s) {
+  if (s >= 7) return 'var(--green)';
+  if (s >= 4) return 'var(--orange)';
+  return 'var(--red)';
+}
+
+function tags(arr) {
+  if (!arr?.length) return '<span style="color:var(--muted);font-size:0.8rem">—</span>';
+  return '<div class="tag-list">' + arr.map(t => `<span class="tag">${t}</span>`).join('') + '</div>';
+}
+
+function monoLabel(text) {
+  return `<div class="mono-label">${text}</div>`;
+}
+
+function renderResults(data) {
+  const { market, competitors, feasibility, revenue, risks, trends, summary } = data;
+
+  const score      = summary?.overall_score || 0;
+  const verdictRaw = (summary?.verdict || '').toLowerCase();
+  const verdictClass = verdictRaw.startsWith('go') ? 'go' : verdictRaw.startsWith('kill') ? 'kill' : 'pivot';
+  const verdictLabel = verdictRaw.startsWith('go') ? '✓ GO' : verdictRaw.startsWith('kill') ? '✗ KILL' : '⟳ PIVOT';
+
+  const circumference = 2 * Math.PI * 42;
+  const offset = circumference - (score / 100) * circumference;
+
+  const html = `
+    <!-- Verdict Banner -->
+    <div class="verdict-banner ${verdictClass}">
+      <div class="verdict-left">
+        <div class="verdict-tag">${verdictLabel} — VERDICT</div>
+        <div class="verdict-text">${summary?.verdict || ''}</div>
+      </div>
+      <div class="verdict-score-ring">
+        <svg width="96" height="96" viewBox="0 0 96 96">
+          <circle class="ring-bg" cx="48" cy="48" r="42"/>
+          <circle class="ring-fill" cx="48" cy="48" r="42"
+            stroke-dasharray="${circumference}"
+            stroke-dashoffset="${circumference}"
+            id="ring-arc"/>
+        </svg>
+        <div class="ring-label">
+          <div class="ring-number" id="ring-num">0</div>
+          <div class="ring-sub">/ 100</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Elevator Pitch -->
+    <div class="pitch-box">
+      <div class="pitch-label">Refined Elevator Pitch</div>
+      <div class="pitch-text">${summary?.elevator_pitch || ''}</div>
+    </div>
+
+    <!-- Score Grid -->
+    <div class="score-grid">
+      ${[
+        ['Market',      market?.score,      '📈'],
+        ['Competition', competitors?.score, '⚔️'],
+        ['Feasibility', feasibility?.score, '⚙️'],
+        ['Revenue',     revenue?.score,     '💰'],
+        ['Risk',        risks?.score,       '🛡️'],
+      ].map(([label, s, icon]) => `
+        <div class="score-card">
+          <div class="score-card-label">${icon} ${label}</div>
+          <div class="score-card-value" style="color:${scoreColor(s)}">${s ?? '—'}</div>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width:0%;background:${scoreColor(s)}" data-target="${(s||0)*10}%"></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- Analysis Sections -->
+    <div class="sections-grid">
+
+      <!-- Market -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon" style="background:RGBA(96,165,250,0.12)">📈</div>
+          <div class="section-title">Market Analysis</div>
+        </div>
+        <div class="kv-row"><span class="kv-key">Market Size</span><span class="kv-val">${market?.market_size || '—'}</span></div>
+        <div class="kv-row"><span class="kv-key">Growth Rate</span><span class="kv-val">${market?.growth_rate || market?.growth_size || '—'}</span></div>
+        <div class="kv-row"><span class="kv-key">Maturity</span><span class="kv-val">${market?.market_maturity || '—'}</span></div>
+        ${monoLabel('Key Trends')}
+        ${tags(market?.key_trends)}
+      </div>
+
+      <!-- Competition -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon" style="background:RGBA(248,113,113,0.12)">⚔️</div>
+          <div class="section-title">Competitive Landscape</div>
+        </div>
+        ${monoLabel('Direct Competitors')}
+        ${tags(competitors?.direct_competitors)}
+        ${monoLabel('Indirect Competitors')}
+        ${tags(competitors?.indirect_competitors)}
+        ${monoLabel('Suggested Moat')}
+        <div style="font-size:0.85rem;line-height:1.6">${competitors?.competitive_moat || '—'}</div>
+        ${monoLabel('Advantages')}
+        ${tags(competitors?.competitive_advantages)}
+      </div>
+
+      <!-- Feasibility -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon" style="background:RGBA(167,139,250,0.12)">⚙️</div>
+          <div class="section-title">Technical Feasibility</div>
+        </div>
+        <div class="kv-row"><span class="kv-key">Complexity</span><span class="kv-val">${feasibility?.technical_complexity || '—'}</span></div>
+        <div class="kv-row"><span class="kv-key">MVP Timeline</span><span class="kv-val">${feasibility?.estimated_mvp_timeline || '—'}</span></div>
+        ${monoLabel('Required Skills')}
+        ${tags(feasibility?.required_team_skills)}
+        ${monoLabel('Technical Challenges')}
+        ${tags(feasibility?.key_technical_challenges)}
+      </div>
+
+      <!-- Revenue -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon" style="background:RGBA(74,222,128,0.12)">💰</div>
+          <div class="section-title">Revenue Strategy</div>
+        </div>
+        <div class="kv-row"><span class="kv-key">Model</span><span class="kv-val">${revenue?.recommended_model || '—'}</span></div>
+        <div class="kv-row"><span class="kv-key">Pricing</span><span class="kv-val">${revenue?.pricing_strategy || '—'}</span></div>
+        <div class="kv-row"><span class="kv-key">Timeline</span><span class="kv-val">${revenue?.monetization_timeline || '—'}</span></div>
+        ${monoLabel('Unit Economics')}
+        <div style="font-size:0.85rem;line-height:1.6">${revenue?.unit_economics || '—'}</div>
+      </div>
+    </div>
+
+    <!-- Risks -->
+    <div class="section-card" style="margin-bottom:20px">
+      <div class="section-header">
+        <div class="section-icon" style="background:RGBA(248,113,113,0.12)">🛡️</div>
+        <div class="section-title">Risk Assessment — ${risks?.risk_level || ''}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+        <div>
+          ${monoLabel('Critical Risks')}
+          ${(risks?.critical_risks || []).map(r => `
+            <div class="risk-item"><div class="risk-dot"></div><span>${r}</span></div>
+          `).join('') || '<span style="color:var(--muted);font-size:0.8rem">—</span>'}
+        </div>
+        <div>
+          ${monoLabel('Mitigation Strategies')}
+          ${(risks?.mitigation_strategies || []).map(r => `
+            <div class="risk-item"><div class="risk-dot mitigation"></div><span>${r}</span></div>
+          `).join('') || '<span style="color:var(--muted);font-size:0.8rem">—</span>'}
+        </div>
+      </div>
+    </div>
+
+    <!-- Market Timing / Trends -->
+    <div class="section-card" style="margin-bottom:20px">
+      <div class="section-header">
+        <div class="section-icon" style="background:RGBA(96,165,250,0.12)">📊</div>
+        <div class="section-title">Market Timing — ${trends?.timing_verdict || '—'}</div>
+      </div>
+      <div class="kv-row"><span class="kv-key">Trend Direction</span><span class="kv-val">${trends?.trend_direction || '—'}</span></div>
+      <div class="kv-row"><span class="kv-key">Peak Interest</span><span class="kv-val">${trends?.peak_interest_month || '—'}</span></div>
+      <div class="kv-row">
+        <span class="kv-key">Timing Score</span>
+        <span class="kv-val" style="color:${scoreColor(trends?.timing_score)}">${trends?.timing_score ?? '—'}/10</span>
+      </div>
+      ${monoLabel('Trend Summary')}
+      <div style="font-size:0.85rem;line-height:1.6;margin-bottom:8px">${trends?.trend_summary || '—'}</div>
+      ${monoLabel('Supporting News')}
+      ${tags(trends?.supporting_news)}
+    </div>
+
+    <!-- Next Steps -->
+    <div class="next-steps-card">
+      <div class="next-steps-title">Your Next 3 Moves</div>
+      ${(summary?.next_steps || []).map((s, i) => `
+        <div class="next-step-row">
+          <div class="step-num">${i+1}</div>
+          <div class="step-text">${s}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- Biggest Assumption -->
+    <div class="assumption-box">
+      <div class="assumption-label">🔬 Biggest Assumption to Test First</div>
+      <div class="assumption-text">${summary?.biggest_assumption || ''}</div>
+    </div>
+
+    <button class="btn-reset" onclick="resetForm()">← Validate Another Idea</button>
+  `;
+
+  const resultsEl = document.getElementById('results');
+  document.getElementById('loading-state').style.display = 'none'; /* FIX: hide loading */
+  resultsEl.innerHTML    = html;
+  resultsEl.style.display = 'block';                                /* FIX: show results */
+
+  // Animate ring
+  requestAnimationFrame(() => {
+    const arc = document.getElementById('ring-arc');
+    if (arc) arc.style.strokeDashoffset = offset;
+
+    const numEl = document.getElementById('ring-num');
+    let cur = 0;
+    const step = score / 60;
+    const iv = setInterval(() => {
+      cur = Math.min(cur + step, score);
+      numEl.textContent = Math.round(cur);
+      if (cur >= score) clearInterval(iv);
+    }, 16);
+
+    document.querySelectorAll('.score-bar-fill').forEach(el => {
+      const target = el.dataset.target;
+      setTimeout(() => { el.style.width = target; }, 200);
+    });
+  });
+}
+
+function resetForm() {
+  document.getElementById('results').style.display  = 'none';
+  document.getElementById('results').innerHTML       = '';
+  document.getElementById('form-card').style.display = 'block';
+  document.getElementById('validate-btn').disabled   = false;
+  document.getElementById('btn-spinner').style.display = 'none';
+  document.getElementById('btn-text').textContent    = 'Validate My Idea →';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+
+</body>
+</html>

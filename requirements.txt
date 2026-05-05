@@ -1,0 +1,14 @@
+langchain
+langchain-google-genai
+langchain-anthropic
+pytrends
+langchain-groq
+langchain-core
+langchain-community
+fastapi
+uvicorn
+python-dotenv
+pydantic
+jinja2
+tavily
+httpx
